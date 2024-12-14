@@ -1,0 +1,5 @@
+mvn install:install-file -Dfile="C:\Users\JorgeM\Desktop\upm\master\evolutiva\project\GraphQuest\jdsl.jar" -DgroupId=com.jdsl -DartifactId=jdsl -Dversion=2.1.1 -DgeneratePom=true -Dpackaging=jar
+
+
+
+mvn install:install-file -Dfile="C:\Users\JorgeM\Desktop\upm\master\evolutiva\project\GraphQuest\GPL-1.0.jar" -DgroupId=aturing -DartifactId=GPL -Dversion=1.0 -DgeneratePom=true

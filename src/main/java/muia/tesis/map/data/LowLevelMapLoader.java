@@ -7,10 +7,17 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.regex.*;
+
 import javax.imageio.ImageIO;
 
 import muia.tesis.LowLevelGrammarBaseListener;
 import muia.tesis.LowLevelGrammarParser;
+
+import java.util.Properties;
+import java.util.TreeMap;
 
 import org.graphstream.graph.Graph;
 import org.graphstream.graph.Node;
@@ -33,6 +40,7 @@ public class LowLevelMapLoader extends LowLevelGrammarBaseListener {
 			+ "size: 120px, 120px; fill-mode: image-scaled; }";
 	private boolean isBlock = false;
 	private List<Integer> blockPositions;
+	private Map<String,String> config;
 
 	public LowLevelMapLoader(List<String> mainContents) {
 		log.info("Processing low level map with {} main contents", mainContents);
@@ -41,6 +49,8 @@ public class LowLevelMapLoader extends LowLevelGrammarBaseListener {
 		this.graph = new DefaultGraph("");
 		this.graph.setAutoCreate(true);
 		this.graph.setStrict(false);
+		this.config = loadConfig();
+		
 
 		this.graph.addEdge("1-2", "1", "2");
 		for (Node node : this.graph) {
@@ -51,20 +61,98 @@ public class LowLevelMapLoader extends LowLevelGrammarBaseListener {
 		this.graph.addAttribute("ui.stylesheet", this.style);
 	}
 
+	public Map<String, String> loadConfig(){
+		Properties prop = new Properties();
+		
+		HashMap<String, String> config = new HashMap<>();
+		
+		try {
+			prop.load(LowLevelMapLoader.class.getClassLoader().getResourceAsStream(
+					"base_config.properties"));
+
+			for (Object key : prop.keySet()) {
+				String value = prop.getProperty((String) key);
+				config.put((String) key, value);
+			}
+
+		} catch (IOException ex) {
+			ex.printStackTrace();
+		}
+		return config;
+	}
+		
+
 	public Graph graph() {
 		return this.graph;
+	}
+	
+
+	public static String extraerDerechaInclusive(String texto, String regex) {
+        // Construir la expresión regular de forma dinámica para que busque la letra dada
+        
+
+        // Usamos el patrón regex y lo aplicamos al texto
+        Pattern pattern = Pattern.compile(regex);
+        Matcher matcher = pattern.matcher(texto);
+
+        // Comprobamos si la cadena coincide con la expresión regular
+        if (matcher.find()) {
+            String resultado = matcher.group(0); 
+            if (resultado.isEmpty()) {
+                return "";  // Si no hay nada a la derecha de la letra
+            } else {
+                return resultado;  // Muestra el texto a la derecha de la letra
+            }
+        } else {
+            return "";  // Si no se encuentra la letra en el texto
+        }
+    }
+
+	private String name_regex(String content_regex,String name,List<String> content){
+		String result= name;
+		String rightName;
+		for (String c : content){
+			
+			rightName= extraerDerechaInclusive(c,content_regex);
+			if (!rightName.isEmpty()){
+				return result+"_"+rightName;
+			}
+
+		}
+		return result;
+
+
 	}
 
 	private String image(int rooms, List<String> content) {
 		File temp = null;
 		try {
+			String baseName=this.config.get("name_base_file");
+
+			if (this.config.get("use_content").equals("true") && !this.config.get("content_regex").isEmpty() && content!=null){
+				baseName=name_regex(this.config.get("content_regex"),baseName,content);
+			}
+			
+			baseName="/"+baseName+".png";
+			System.out.println(baseName);
 			BufferedImage image = ImageIO.read(getClass().getResourceAsStream(
-					"/base.png"));
-			image = compose(image, "" + rooms);
+				baseName));
+			
+			
+				
+			String rooms_name=""+rooms;
+			if (this.config.get("use_content").equals("true") && !this.config.get("content_regex").isEmpty() && content!=null){
+				rooms_name=name_regex(this.config.get("content_regex"),rooms_name,content);
+				
+			}
+
+			image = compose(image, rooms_name);
 
 			if (content != null) {
-				for (String c : content)
+				for (String c : content){
 					image = compose(image, c);
+				}
+					
 			}
 
 			temp = File.createTempFile("" + image.hashCode(), ".png");

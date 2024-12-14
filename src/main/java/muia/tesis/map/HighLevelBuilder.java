@@ -124,7 +124,7 @@ public class HighLevelBuilder implements Builder<HighLevelMap> {
 	private Grammar grammar(String rules) {
 		Grammar grammar = null;
 		try {
-			File temp = File.createTempFile("grammar", ".gr");
+			File temp = File.createTempFile("grammar_high", ".gr");
 			BufferedWriter writer = new BufferedWriter(new FileWriter(temp));
 			writer.write(rules);
 			writer.close();
