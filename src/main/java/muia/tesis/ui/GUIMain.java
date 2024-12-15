@@ -12,6 +12,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Properties;
 import java.util.TreeMap;
@@ -38,6 +39,8 @@ import muia.tesis.gen.eval.HighLevelRatioEvaluator;
 import muia.tesis.map.data.CompositeMap;
 import muia.tesis.map.data.HighLevelMap;
 import muia.tesis.map.data.LowLevelMap;
+import muia.tesis.map.data.LowLevelMapLoader;
+import muia.tesis.map.Util;
 
 import org.graphstream.graph.Graph;
 import org.graphstream.ui.swingViewer.View;
@@ -77,6 +80,8 @@ public class GUIMain {
 	private Component horizontalStrut;
 	private Component horizontalStrut_1;
 
+	private Map<String,String> config;
+
 	/**
 	 * Launch the application.
 	 */
@@ -96,6 +101,8 @@ public class GUIMain {
 		});
 	}
 
+
+
 	/**
 	 * Create the application.
 	 */
@@ -108,6 +115,7 @@ public class GUIMain {
 	 */
 	private void initialize() {
 		content = loadContent();
+		config = Util.loadConfig("gui_config.properties", this.getClass());
 
 		contentToggles = new HashMap<>();
 		contentSliders = new HashMap<>();
@@ -154,11 +162,11 @@ public class GUIMain {
 		roomPanel.add(spinnerPanel);
 		spinnerPanel.setLayout(new BoxLayout(spinnerPanel, BoxLayout.X_AXIS));
 
-		JSpinner spinner = new JSpinner(new SpinnerNumberModel(3, 3, 8, 1));
+		JSpinner spinner = new JSpinner(new SpinnerNumberModel(3, Integer.parseInt(config.get("min_rooms")), Integer.parseInt(config.get("max_rooms")), 1));
 		spinnerPanel.add(spinner);
 		roomSpinners.add(spinner);
 
-		spinner = new JSpinner(new SpinnerNumberModel(3, 3, 8, 1));
+		spinner = new JSpinner(new SpinnerNumberModel(3, Integer.parseInt(config.get("min_rooms")), Integer.parseInt(config.get("max_rooms")), 1));
 		spinnerPanel.add(spinner);
 		roomSpinners.add(spinner);
 
@@ -184,7 +192,7 @@ public class GUIMain {
 			slider.setEnabled(false);
 			slider.addChangeListener(new SliderListener());
 			slider.setValue(5);
-			slider.setMaximum(10);
+			slider.setMaximum(Integer.parseInt(this.config.get("max_slider")));
 			slider.setMinimum(1);
 			slider.setSnapToTicks(true);
 			slider.setPaintTicks(true);
@@ -229,8 +237,8 @@ public class GUIMain {
 				sliderB.addChangeListener(new SliderListener());
 				sliderA.setValue(5);
 				sliderB.setValue(5);
-				sliderA.setMaximum(10);
-				sliderB.setMaximum(10);
+				sliderA.setMaximum(Integer.parseInt(config.get("max_slider")));
+				sliderB.setMaximum(Integer.parseInt(config.get("max_slider")));
 				sliderA.setMinimum(1);
 				sliderB.setMinimum(1);
 				sliderA.setSnapToTicks(true);
@@ -343,7 +351,7 @@ public class GUIMain {
 
 	private class DelButtonActionListener implements ActionListener {
 		public void actionPerformed(ActionEvent e) {
-			if (roomSpinners.size() > 2) {
+			if (roomSpinners.size() > Integer.parseInt(config.get("min_floors"))) {
 				roomSpinners.remove(roomSpinners.size() - 1);
 				spinnerPanel.removeAll();
 				for(JSpinner sp : roomSpinners)
@@ -355,8 +363,8 @@ public class GUIMain {
 
 	private class AddButtonActionListener implements ActionListener {
 		public void actionPerformed(ActionEvent e) {
-			if (roomSpinners.size() < 6) {
-				JSpinner spinner = new JSpinner(new SpinnerNumberModel(3, 3, 8,
+			if (roomSpinners.size() < Integer.parseInt(config.get("max_floors"))) {
+				JSpinner spinner = new JSpinner(new SpinnerNumberModel(3, Integer.parseInt(config.get("min_rooms")), Integer.parseInt(config.get("max_rooms")),
 						1));
 				spinnerPanel.add(spinner);
 				roomSpinners.add(spinner);
@@ -393,7 +401,7 @@ public class GUIMain {
 							targets[0], targets[1]));
 				}
 			}
-
+			
 			GeneticAlgorithm ga = new GeneticAlgorithm(rooms, evals, content);
 			try {
 				CompositeMap map = ga.run(hlOptions, llOptions);

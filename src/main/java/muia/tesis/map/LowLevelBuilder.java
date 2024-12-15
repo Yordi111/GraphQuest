@@ -14,6 +14,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 
@@ -26,6 +27,9 @@ public class LowLevelBuilder implements Builder<LowLevelMap> {
 	private TreeMap<String, String[]> content;
 	private String grammarRules;
 	private Grammar grammar;
+	private Map<String,String> config;
+	//private Map<String,String> fixContent;
+	//private Map<String,String> secureContent;
 
 	public LowLevelBuilder(int nNodes, List<String> mainContents,
 			int[] nContent, TreeMap<String, String[]> content) {
@@ -33,8 +37,15 @@ public class LowLevelBuilder implements Builder<LowLevelMap> {
 		this.mainContents = mainContents;
 		this.nContent = nContent;
 		this.content = content;
+		this.config = Util.loadConfig("gui_config.properties",this.getClass());
+		//this.fixContent = Util.loadConfig("fix_content.properties",this.getClass());
+		//this.secureContent= Util.loadConfig("secure_content.properties", this.getClass());
+
 		this.grammarRules = rules();
 		this.grammar = grammar(this.grammarRules);
+		
+		//this.orderContent= Util.loadConfig("content.properties", this.getClass());
+		
 	}
 
 	public LowLevelMap build() {
@@ -71,15 +82,26 @@ public class LowLevelBuilder implements Builder<LowLevelMap> {
 	}
 
 	private String rules() {
+		int max_connection = Integer.parseInt(this.config.get("max_rooms"));
 		StringBuilder grammar = new StringBuilder();
+		
+
+
+
+
 		grammar.append("#A# S" + "\n"); // Axiom
 
+		//grammar.append("#N# R Z C "); // Non-terminals
 		grammar.append("#N# R Z "); // Non-terminals
 		for (int i = 3; i <= nNodes; i++)
 			grammar.append("R" + i + " ");
 		int count = 0;
 		for (String key : content.keySet()) {
-			if (nContent[count] > 0) grammar.append(key + "s " + key + " ");
+			if (nContent[count] > 0 ){//|| 
+			//(this.fixContent.containsKey(key) && this.fixContent.get(key).equals("Yes"))|| 
+			//(this.secureContent.containsKey(key) && this.secureContent.get(key).equals("Yes"))) 
+			grammar.append(key + "s " + key + " ");
+			}
 			count++;
 		}
 		grammar.append("\n");
@@ -89,8 +111,11 @@ public class LowLevelBuilder implements Builder<LowLevelMap> {
 			grammar.append(" " + i);
 		count = 0;
 		for (String key : content.keySet()) {
-			if (nContent[count] > 0)
+			if (nContent[count] > 0){// || 
+			//(this.fixContent.containsKey(key) && this.fixContent.get(key).equals("Yes"))|| 
+			//(this.secureContent.containsKey(key) && this.secureContent.get(key).equals("Yes")))
 				grammar.append(" " + String.join(" ", content.get(key)));
+			}
 			count++;
 		}
 		grammar.append("\n");
@@ -100,19 +125,26 @@ public class LowLevelBuilder implements Builder<LowLevelMap> {
 		if (this.mainContents.size() > 0) grammar.append("; Z ");
 		count = 0;
 		for (String key : content.keySet()) {
-			if (nContent[count] > 0) grammar.append("; " + key + "s ");
+			if (nContent[count] > 0){ //|| 
+			//(this.fixContent.containsKey(key) && this.fixContent.get(key).equals("Yes"))|| 
+			//(this.secureContent.containsKey(key) && this.secureContent.get(key).equals("Yes"))) 
+			grammar.append("; " + key + "s ");
+			}
 			count++;
 		}
 		grammar.append("\n");
+		//grammar.append("C ::= 0 | 1");
+
 
 		if (nNodes > 2) { // P - Room connections
 			grammar.append("R ::= ");
-			for (int i = 3; i <= nNodes; i++) {
+			for (int i = 3; i <= Math.min(nNodes,max_connection); i++) {
 				grammar.append("R" + i);
 				if (i != nNodes) grammar.append(" : ");
 			}
 			grammar.append("\n");
 
+			
 			for (int i = 3; i <= nNodes; i++) {
 				grammar.append("R" + i + " ::= ");
 
@@ -142,21 +174,28 @@ public class LowLevelBuilder implements Builder<LowLevelMap> {
 		}
 
 		count = 0;
+		int fixCountentSize;
 		for (String key : content.keySet()) { // P - Contents
-			if (nContent[count] > 0) {
+			fixCountentSize = nContent[count];
+
+
+			if (fixCountentSize > 0) {
 				grammar.append(key + "s ::= ");
 
 				List<String> combs = new ArrayList<>();
 				List<Integer> conns = new ArrayList<>();
+
+
+				
 				for (int i = 1; i <= nNodes; i++)
 					conns.add(i);
-				for (List<String> comb : combinations(conns, nContent[count],
+				for (List<String> comb : combinations(conns, fixCountentSize,
 						false)) {
 					String cont = String.join(" : ", comb);
 					cont += " ;";
-					for (int i = 1; i <= nContent[count]; i++) {
+					for (int i = 1; i <= fixCountentSize; i++) {
 						cont += " " + key;
-						if (i != nContent[count]) cont += " :";
+						if (i != fixCountentSize) cont += " :";
 					}
 					combs.add(cont);
 				}
@@ -178,7 +217,9 @@ public class LowLevelBuilder implements Builder<LowLevelMap> {
 
 	private Grammar grammar(String rules) {
 		Grammar grammar = null;
+		System.out.println("Low Rules :\n"+rules);
 		try {
+			
 			File temp = File.createTempFile("grammar_low", ".gr");
 			BufferedWriter writer = new BufferedWriter(new FileWriter(temp));
 			writer.write(rules);
@@ -256,14 +297,31 @@ public class LowLevelBuilder implements Builder<LowLevelMap> {
 		return comb;
 	}
 
+	
+	/**
+     * Verifica si la cantidad de '1' en la representación binaria de un número
+     * es mayor o igual que un número máximo especificado.
+     *
+     * @param bin     El número entero que se verificará.
+     * @param maxUnos La cantidad mínima de '1' requerida.
+     * @return true si la cantidad de '1' es mayor o igual a maxUnos, de lo contrario false.
+     */
+    public static boolean checkPrune(int bin, int maxUnos) {
+        // Convierte el número a binario y cuenta los '1'
+        int count = Integer.bitCount(bin);
+        // Verifica si la cantidad de '1' es mayor o igual a maxUnos
+        return count <= maxUnos;
+    }
+
+
 	private static List<String> roomConnections(int n) {
 		List<String> connections = new ArrayList<>();
-
-		for (int bin = 1; bin < Math.pow(2, n - 1); bin++) {
-			String conn = Integer.toBinaryString(bin);
-			while (conn.length() < n - 1)
-				conn = "0" + conn;
-			connections.add(conn);
+		System.out.println("WHYYYYY");
+		for (int bin = 1; (bin < Math.pow(2, n - 1)) ; bin++) {
+			if(checkPrune(bin,6)){
+				String conn = String.format("%" + (n - 1) + "s", Integer.toBinaryString(bin)).replace(' ', '0');
+				connections.add(conn);
+			}
 		}
 		return connections;
 	}

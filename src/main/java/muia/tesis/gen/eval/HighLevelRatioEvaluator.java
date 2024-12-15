@@ -9,6 +9,7 @@ public class HighLevelRatioEvaluator implements Evaluator<HighLevelMap> {
 
 	private String firstKey;
 	private String secondKey;
+	private Boolean checkNumFloor=false;
 	private int targetNum;
 	private int targetDen;
 
@@ -30,10 +31,34 @@ public class HighLevelRatioEvaluator implements Evaluator<HighLevelMap> {
 		this.targetDen /= targetNum;
 	}
 
+	public HighLevelRatioEvaluator(String key, String secondKey,
+			int targetNum) {
+		this.firstKey = key;
+		this.checkNumFloor = true;
+
+		// reduce fraction (6/8 -> 3/4)
+		this.targetNum = targetNum;
+		this.targetDen = targetDen;
+		int temp;
+		while (targetDen != 0) {
+			temp = targetDen;
+			targetDen = targetNum % targetDen;
+			targetNum = temp;
+		}
+		this.targetNum /= targetNum;
+		this.targetDen /= targetNum;
+	}
+
 	@Override
 	public double eval(HighLevelMap instance) {
 		int first = getContentCount(instance, firstKey);
-		int second = getContentCount(instance, secondKey);
+		int second=0;
+		if (checkNumFloor){
+			second = getContentCount(instance, secondKey);
+		}else{
+			second = totalFloors(instance);
+		}
+		
 		int[] div = new int[] { first / targetNum, second / targetDen };
 
 		int a = Math.abs(first - (targetNum * div[0]))
@@ -47,6 +72,15 @@ public class HighLevelRatioEvaluator implements Evaluator<HighLevelMap> {
 	@Override
 	public void printFitness(HighLevelMap instance) {
 	}
+	
+
+	private int totalFloors(HighLevelMap instance) {
+		int count = 0;
+		for (int c : instance.getRooms())
+			count += c;
+		
+		return count;
+	}
 
 	private int getContentCount(HighLevelMap instance, String key) {
 		List<String> keys = new ArrayList<>(instance.getContent().keySet());
@@ -58,7 +92,7 @@ public class HighLevelRatioEvaluator implements Evaluator<HighLevelMap> {
 		int count = 0;
 		for (int[] c : instance.getContentCounts())
 			count += c[idx];
-
+		
 		return count;
 	}
 }

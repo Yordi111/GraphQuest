@@ -1,6 +1,6 @@
 grammar HighLevelGrammar;
 
-map :		contents ';' contents (';' connect ':' contents)* ;
+map :		contents (';' connect ':' contents)* ;
 connect :	NUM ;
 contents :	cont (':' cont)* ;
 cont :		NUM ;

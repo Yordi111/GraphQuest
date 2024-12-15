@@ -60,14 +60,24 @@ public class GeneticAlgorithm {
 			List<Evaluator<T>> evs) throws GrammarException {
 
 		List<T> population = new ArrayList<>();
+		
 		population.addAll(Arrays.asList(builder.build(opt.population())));
+	
 		population.sort((a, b) -> eval(a, evs) <= eval(b, evs) ? 1 : -1);
 
 		int conv = 0;
 		T best = population.get(0);
 		List<T> newPop = new ArrayList<>();
+		int step=0;
 
 		while (conv < opt.convergence()) {
+			
+			if(step%1==0){
+				System.out.println("Step "+step+": was executed");
+			}
+			
+			step=step+1;
+				
 			// migration
 			newPop.addAll(Arrays.asList(builder.build(opt.migration())));
 			// mutation
@@ -91,10 +101,12 @@ public class GeneticAlgorithm {
 			// System.err
 			// .println("[" + conv + "] " + eval(best, evs) + " " + best);
 
-			if (best != population.get(0)) {
+			if (!best.equals(population.get(0))) {
 				conv = 0;
+				System.out.println("i am studi");
 				best = population.get(0);
 			} else {
+				
 				conv++;
 			}
 		}
@@ -107,6 +119,7 @@ public class GeneticAlgorithm {
 
 	private <T> double eval(T instance, List<Evaluator<T>> evaluators) {
 		double fitness = 0.0;
+		
 		for (Evaluator<T> e : evaluators)
 			fitness += e.eval(instance);
 		return fitness;

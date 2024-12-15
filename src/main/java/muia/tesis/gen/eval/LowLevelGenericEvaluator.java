@@ -3,24 +3,46 @@ package muia.tesis.gen.eval;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
+import muia.tesis.map.data.HighLevelMap;
 import muia.tesis.map.data.LowLevelMap;
 
 import org.graphstream.algorithm.AStar;
 import org.graphstream.graph.Node;
 
+import muia.tesis.map.Util;
+
 public class LowLevelGenericEvaluator implements Evaluator<LowLevelMap> {
+	private Map<String,String> config;
 
 	@Override
 	public double eval(LowLevelMap instance) {
-		return criticalPathFitness(instance) + contentClustersFitness(instance);
+		int maxConnections = Integer.parseInt(Util.loadConfig("base_config.properties",this.getClass()).get("max_connections"));
+		return criticalPathFitness(instance) + contentClustersFitness(instance)+maxConnetionsFitness(instance,maxConnections,100);
 	}
 	
 	@Override
 	public void printFitness(LowLevelMap instance) {
 		System.out.println("\tcriticalPathFitness=" + criticalPathFitness(instance));
 		System.out.println("\tcontentClustersFitness=" + contentClustersFitness(instance));
+	}
+
+	private static double maxConnetionsFitness(LowLevelMap instance,int maxConnections,int errorPerConn){
+		double error=0;
+		
+		for (Node node : instance.getGraph()){
+			if (node.getAttribute("ui.class").equals("room")) {
+				int rooms = node.getAttribute("cons");
+				if (rooms>maxConnections){
+					error += -maxConnections*errorPerConn;
+				}
+				
+			}
+		}
+		return error;
+		
 	}
 
 	private static double criticalPathFitness(LowLevelMap instance) {

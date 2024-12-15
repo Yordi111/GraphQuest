@@ -7,7 +7,8 @@ import java.util.List;
 import java.util.TreeMap;
 
 import muia.tesis.HighLevelGrammarLexer;
-import muia.tesis.HighLevelGrammarParser;
+import muia.tesis.map.HighLevelGrammarParser_v2;
+//import muia.tesis.HighLevelGrammarParser;
 
 import org.antlr.v4.runtime.ANTLRInputStream;
 import org.antlr.v4.runtime.CommonTokenStream;
@@ -38,19 +39,24 @@ public class HighLevelMap {
 		this.grammarRules = grammarRules;
 		this.grammar = grammar;
 		this.derivation = derivation;
-
+		
+		
+		
 		HighLevelGrammarLexer lexer = new HighLevelGrammarLexer(
 				new ANTLRInputStream(derivation.getWord()));
-		HighLevelGrammarParser parser = new HighLevelGrammarParser(
+		
+				HighLevelGrammarParser_v2 parser = new HighLevelGrammarParser_v2(
 				new CommonTokenStream(lexer));
 		ParseTree tree = parser.map();
+		
 
 		ParseTreeWalker walker = new ParseTreeWalker();
-		HighLevelMapLoader loader = new HighLevelMapLoader(content);
+		HighLevelMapLoader loader = new HighLevelMapLoader(content,this.rooms);
 		walker.walk(loader, tree);
 
 		this.graph = loader.graph();
 		this.contentCounts = loader.contentCounts();
+		
 		this.mainContents = loader.mainContents();
 		this.pathPlanner = new AStar(this.graph);
 	}

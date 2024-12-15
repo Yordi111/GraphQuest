@@ -24,6 +24,7 @@ import org.graphstream.graph.Node;
 import org.graphstream.graph.implementations.DefaultGraph;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import muia.tesis.map.Util;
 
 public class LowLevelMapLoader extends LowLevelGrammarBaseListener {
 
@@ -41,6 +42,7 @@ public class LowLevelMapLoader extends LowLevelGrammarBaseListener {
 	private boolean isBlock = false;
 	private List<Integer> blockPositions;
 	private Map<String,String> config;
+	
 
 	public LowLevelMapLoader(List<String> mainContents) {
 		log.info("Processing low level map with {} main contents", mainContents);
@@ -49,7 +51,8 @@ public class LowLevelMapLoader extends LowLevelGrammarBaseListener {
 		this.graph = new DefaultGraph("");
 		this.graph.setAutoCreate(true);
 		this.graph.setStrict(false);
-		this.config = loadConfig();
+		this.config = Util.loadConfig("base_config.properties",this.getClass());
+		
 		
 
 		this.graph.addEdge("1-2", "1", "2");
@@ -61,25 +64,7 @@ public class LowLevelMapLoader extends LowLevelGrammarBaseListener {
 		this.graph.addAttribute("ui.stylesheet", this.style);
 	}
 
-	public Map<String, String> loadConfig(){
-		Properties prop = new Properties();
-		
-		HashMap<String, String> config = new HashMap<>();
-		
-		try {
-			prop.load(LowLevelMapLoader.class.getClassLoader().getResourceAsStream(
-					"base_config.properties"));
-
-			for (Object key : prop.keySet()) {
-				String value = prop.getProperty((String) key);
-				config.put((String) key, value);
-			}
-
-		} catch (IOException ex) {
-			ex.printStackTrace();
-		}
-		return config;
-	}
+	
 		
 
 	public Graph graph() {
@@ -108,14 +93,19 @@ public class LowLevelMapLoader extends LowLevelGrammarBaseListener {
         }
     }
 
-	private String name_regex(String content_regex,String name,List<String> content){
+	private String name_regex(String content_regex,String name,List<String> content,Boolean combined){
 		String result= name;
 		String rightName;
 		for (String c : content){
 			
 			rightName= extraerDerechaInclusive(c,content_regex);
-			if (!rightName.isEmpty()){
-				return result+"_"+rightName;
+
+			if (!rightName.isEmpty() && !combined){
+				return rightName;
+			}
+
+			if (!rightName.isEmpty() && combined){
+				return rightName+"/"+name;
 			}
 
 		}
@@ -129,28 +119,32 @@ public class LowLevelMapLoader extends LowLevelGrammarBaseListener {
 		try {
 			String baseName=this.config.get("name_base_file");
 
-			if (this.config.get("use_content").equals("true") && !this.config.get("content_regex").isEmpty() && content!=null){
-				baseName=name_regex(this.config.get("content_regex"),baseName,content);
+			if (this.config.get("use_content_base").equals("true") && !this.config.get("content_regex").isEmpty() && content!=null){
+				baseName=name_regex(this.config.get("content_regex"),baseName,content,false);
 			}
 			
-			baseName="/"+baseName+".png";
-			System.out.println(baseName);
+			baseName="/"+this.config.get("name_base_dir")+"/"+baseName+".png";
+			
 			BufferedImage image = ImageIO.read(getClass().getResourceAsStream(
 				baseName));
 			
 			
 				
 			String rooms_name=""+rooms;
-			if (this.config.get("use_content").equals("true") && !this.config.get("content_regex").isEmpty() && content!=null){
-				rooms_name=name_regex(this.config.get("content_regex"),rooms_name,content);
-				
+			if (rooms>=Integer.parseInt(this.config.get("max_connections"))){
+				rooms_name=""+"error";
+			}
+			if (this.config.get("use_content_path").equals("true") && !this.config.get("content_regex").isEmpty() && content!=null){
+				rooms_name=name_regex(this.config.get("content_regex"),rooms_name,content,true);
 			}
 
-			image = compose(image, rooms_name);
+			
+			//System.out.println("WHY "+rooms_name);
+			image = compose(image, rooms_name,this.config.get("name_path_dir"));
 
 			if (content != null) {
 				for (String c : content){
-					image = compose(image, c);
+					image = compose(image, c,this.config.get("name_content_dir"));
 				}
 					
 			}
@@ -164,10 +158,10 @@ public class LowLevelMapLoader extends LowLevelGrammarBaseListener {
 		return temp.getAbsolutePath();
 	}
 
-	private BufferedImage compose(BufferedImage base, String overlayFilename)
+	private BufferedImage compose(BufferedImage base, String overlayFilename,String overlayFileDir)
 			throws IOException {
 		BufferedImage overlay = ImageIO.read(getClass().getResourceAsStream(
-				"/" + overlayFilename + ".png"));
+				"/" +overlayFileDir+"/"+ overlayFilename + ".png"));
 
 		int w = Math.max(base.getWidth(), base.getWidth());
 		int h = Math.max(base.getHeight(), base.getHeight());

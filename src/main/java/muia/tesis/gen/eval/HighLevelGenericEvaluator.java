@@ -26,15 +26,24 @@ public class HighLevelGenericEvaluator implements Evaluator<HighLevelMap> {
 	private static double branchingFitness(HighLevelMap instance) {
 		AStar aStar = instance.getPathPlanner();
 		int zones = instance.getRooms().length;
+		
 
 		int distance = 0;
 		for (int i = 0; i < zones - 1; i++) {
 			aStar.compute("" + (i + 1), "" + (i + 2));
 			distance += aStar.getShortestPath().getEdgeCount();
 		}
-
+		
+		if (zones==1){
+			aStar.compute("" + (1), "" + (1));
+			distance += aStar.getShortestPath().getEdgeCount();
+			return distance;
+		}
+			
 		return distance / (double) (zones - 1);
 	}
+
+	
 
 	private static double progressionFitness(HighLevelMap instance) {
 		int[] rooms = instance.getRooms();
@@ -60,7 +69,7 @@ public class HighLevelGenericEvaluator implements Evaluator<HighLevelMap> {
 			}
 //			System.err.println();
 		}
-
+		
 		return -(fitness / contentCounts[0].length) * (rooms.length - 1);
 	}
 	
@@ -84,7 +93,7 @@ public class HighLevelGenericEvaluator implements Evaluator<HighLevelMap> {
 			
 //			System.err.println((i + 1) + "->" + (i + 2) + " : " + path);
 		}
-
+		
 		return -0.5 * bt;
 	}
 }
