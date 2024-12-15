@@ -42,6 +42,7 @@ public class LowLevelMapLoader extends LowLevelGrammarBaseListener {
 	private boolean isBlock = false;
 	private List<Integer> blockPositions;
 	private Map<String,String> config;
+	private Map<String,String> mainContentsConfig;
 	
 
 	public LowLevelMapLoader(List<String> mainContents,int nRooms) {
@@ -52,7 +53,7 @@ public class LowLevelMapLoader extends LowLevelGrammarBaseListener {
 		this.graph.setAutoCreate(true);
 		this.graph.setStrict(false);
 		this.config = Util.loadConfig("base_config.properties",this.getClass());
-		
+		this.mainContentsConfig = Util.loadConfig("main_content.properties",this.getClass());
 		
 
 		if (nRooms>1){
@@ -187,6 +188,8 @@ public class LowLevelMapLoader extends LowLevelGrammarBaseListener {
 		Node n = this.graph.addNode("" + node);
 		n.setAttribute("ui.class", "room");
 
+		
+
 		int consCount = 0;
 		for (int i = 0; i < conns.length; i++) {
 			if (conns[i].equals("1")) {
@@ -215,20 +218,21 @@ public class LowLevelMapLoader extends LowLevelGrammarBaseListener {
 		if (!this.isBlock) {
 			Node node = this.graph.getNode(ctx.getText());
 			String mContent = this.mainContents.get(this.count);
-			if (!mContent.equals("key")) {
-				String tag = "zone " + mContent;
+			String [] split=mContent.split("zone_");
+			if (split.length==2) {
+				String tag = "zone " + split[1];
 				node.setAttribute("cons", (int) node.getAttribute("cons") + 1);
 				node.setAttribute("zoneConn");
 				this.graph.addEdge(ctx.getText() + "-" + tag, ctx.getText(),
 						tag);
 				Node zoneNode = this.graph.getNode(tag);
-				zoneNode.setAttribute("ui.label", mContent);
+				zoneNode.setAttribute("ui.label", split[1]);
 				zoneNode.setAttribute("ui.class", "zone");
 			} else {
 				List<String> content = new ArrayList<>();
 				if (node.getAttribute("content") != null)
 					content.addAll(node.getAttribute("content"));
-				content.add("k");
+				content.add(mContent);
 				node.setAttribute("content", content);
 			}
 		} else {

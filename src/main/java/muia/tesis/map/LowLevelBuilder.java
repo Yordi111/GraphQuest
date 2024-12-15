@@ -91,8 +91,8 @@ public class LowLevelBuilder implements Builder<LowLevelMap> {
 
 		grammar.append("#A# S" + "\n"); // Axiom
 
-		//grammar.append("#N# R Z C "); // Non-terminals
-		grammar.append("#N# R Z "); // Non-terminals
+		grammar.append("#N# R Z C "); // Non-terminals
+		//grammar.append("#N# R Z "); // Non-terminals
 		for (int i = 3; i <= nNodes; i++)
 			grammar.append("R" + i + " ");
 		int count = 0;

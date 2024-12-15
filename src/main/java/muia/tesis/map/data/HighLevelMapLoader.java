@@ -5,6 +5,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.stream.Collectors;
 
 import muia.tesis.HighLevelGrammarBaseListener;
 import muia.tesis.HighLevelGrammarParser;
@@ -217,8 +218,12 @@ public class HighLevelMapLoader extends HighLevelGrammarBaseListener {
 
 			List<String> mCont = new ArrayList<String>();
 			
-			if (node.getAttribute("cons")!=null)
-				mCont.addAll(Arrays.asList(((String) node.getAttribute("cons")).split(",")));
+			if (node.getAttribute("cons")!=null){
+				String[] l = ((String) node.getAttribute("cons")).split(",");
+				mCont.addAll(Arrays.stream(l).map(value -> "zone_" + value.trim()).collect(Collectors.toList()));
+			}
+				//mCont.addAll(Arrays.asList(((String) node.getAttribute("cons")).split(",")));
+				//mCont.addAll(Arrays.stream(((String) node.getAttribute("cons")).split(",")).map(value -> "zone_" + value.trim()).toList()));
 
 			addContent(mCont,i);
 
