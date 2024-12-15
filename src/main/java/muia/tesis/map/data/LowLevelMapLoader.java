@@ -44,7 +44,7 @@ public class LowLevelMapLoader extends LowLevelGrammarBaseListener {
 	private Map<String,String> config;
 	
 
-	public LowLevelMapLoader(List<String> mainContents) {
+	public LowLevelMapLoader(List<String> mainContents,int nRooms) {
 		log.info("Processing low level map with {} main contents", mainContents);
 
 		this.mainContents = mainContents;
@@ -55,7 +55,11 @@ public class LowLevelMapLoader extends LowLevelGrammarBaseListener {
 		
 		
 
-		this.graph.addEdge("1-2", "1", "2");
+		if (nRooms>1){
+			this.graph.addEdge("1-2", "1", "2");
+		}else{
+			this.graph.addNode("1");
+		}
 		for (Node node : this.graph) {
 			// node.addAttribute("ui.label", node.getId());
 			node.setAttribute("cons", 1);
@@ -186,8 +190,8 @@ public class LowLevelMapLoader extends LowLevelGrammarBaseListener {
 		int consCount = 0;
 		for (int i = 0; i < conns.length; i++) {
 			if (conns[i].equals("1")) {
-				this.graph.addEdge((i + 1) + "-" + node, "" + (i + 1), ""
-						+ node);
+				this.graph.addEdge((i + 1) + "-" + node, "" + (i + 1), ""+ node);
+				
 				Node otherNode = this.graph.getNode("" + (i + 1));
 				otherNode.setAttribute("cons",
 						(int) otherNode.getAttribute("cons") + 1);

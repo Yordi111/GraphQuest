@@ -1,6 +1,6 @@
 grammar LowLevelGrammar;
 
-map :		(connect)? ';' positions (';' block)* ;
+map :		(connect)? (';' positions)? (';' block)* ;
 
 connect :	bin (':' bin)* ;
 

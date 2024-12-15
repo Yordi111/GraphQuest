@@ -52,7 +52,7 @@ public class LowLevelMap {
 		ParseTree tree = parser.map();
 
 		ParseTreeWalker walker = new ParseTreeWalker();
-		LowLevelMapLoader loader = new LowLevelMapLoader(this.mainContents);
+		LowLevelMapLoader loader = new LowLevelMapLoader(this.mainContents,this.nNodes);
 		walker.walk(loader, tree);
 
 		return loader.graph();

@@ -216,9 +216,9 @@ public class HighLevelMapLoader extends HighLevelGrammarBaseListener {
 					+ colors[i % colors.length] + ";");
 
 			List<String> mCont = new ArrayList<String>();
-
-			mCont.addAll(Arrays.asList(((String) node.getAttribute("cons"))
-					.split(",")));
+			
+			if (node.getAttribute("cons")!=null)
+				mCont.addAll(Arrays.asList(((String) node.getAttribute("cons")).split(",")));
 
 			addContent(mCont,i);
 
