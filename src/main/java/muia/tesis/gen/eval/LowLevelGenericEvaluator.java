@@ -50,7 +50,7 @@ public class LowLevelGenericEvaluator implements Evaluator<LowLevelMap> {
 		for (Node node : instance.getGraph()) {
 			if (!node.getAttribute("ui.class").equals("zone")) {
 				List<String> content = node.getAttribute("content");
-				if ((content != null && content.contains("k"))
+				if ((content != null && content.contains("key"))
 						|| node.hasAttribute("zoneConn")) mainNodes.add(node);
 			} else mainNodes.add(node);
 		}
