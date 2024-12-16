@@ -92,10 +92,13 @@ public class LowLevelBuilder implements Builder<LowLevelMap> {
 
 		grammar.append("#A# S" + "\n"); // Axiom
 
-		grammar.append("#N# R Z C "); // Non-terminals
-		//grammar.append("#N# R Z "); // Non-terminals
-		for (int i = 3; i <= nNodes; i++)
+		
+		grammar.append("#N# R Z N NZ "); // Non-terminals
+		for (int i = 3; i <= nNodes; i++){
 			grammar.append("R" + i + " ");
+			grammar.append("N" + i + " ");
+
+		}		
 		int count = 0;
 		for (String key : content.keySet()) {
 			if (nContent[count] > 0 ){//|| 
@@ -107,7 +110,7 @@ public class LowLevelBuilder implements Builder<LowLevelMap> {
 		}
 		grammar.append("\n");
 
-		grammar.append("#T# ; : - 0 1"); // Terminals
+		grammar.append("#T# ; : - % 0 1"); // Terminals
 		for (int i = 2; nNodes > 1 && i <= nNodes; i++)
 			grammar.append(" " + i);
 		count = 0;
@@ -140,7 +143,7 @@ public class LowLevelBuilder implements Builder<LowLevelMap> {
 		if (nNodes > 2) { // P - Room connections
 			grammar.append("R ::= ");
 			for (int i = 3; i <= Math.min(nNodes,max_connection); i++) {
-				grammar.append("R" + i);
+				grammar.append(i+" % "+"R" + i);
 				if (i != nNodes) grammar.append(" : ");
 			}
 			grammar.append("\n");
@@ -149,15 +152,35 @@ public class LowLevelBuilder implements Builder<LowLevelMap> {
 			for (int i = 3; i <= nNodes; i++) {
 				grammar.append("R" + i + " ::= ");
 
-				List<String> connections = roomConnections(i);
-				for (int j = 0; j < connections.size(); j++) {
-					grammar.append(String.join(" ",
-							String.join(" ", connections.get(j).split(""))));
-					if (j != connections.size() - 1) grammar.append(" | ");
+				//List<String> connections = roomConnections();
+				int maxConn = Integer.parseInt(this.config.get("max_connections"));
+				List<String> rooms_conns = roomConnections(i,maxConn);
+				for (int j = 0; j < rooms_conns.size(); j++){
+					grammar.append(" "+rooms_conns.get(j));
+					if (j != rooms_conns.size() - 1) grammar.append(" | ");
 				}
 				grammar.append("\n");
+
+				
+				grammar.append((i-1)+"\n");
+
+				grammar.append("N" + i + " ::= ");
+				for (int j = 1; j < i-1; j++) {
+					grammar.append(j+" | ");
+				}
+				grammar.append((i-1)+"\n");
+
 			}
 		}
+
+		grammar.append("N" + " ::= ");
+				for (int j = 1; j < this.nNodes; j++) {
+					grammar.append(j+" | ");
+				}
+		grammar.append(this.nNodes+"\n");		
+		grammar.append("NZ ::= 0 | N\n");
+
+		
 
 		if (this.mainContents.size() > 0) { // P - Main Contents
 			grammar.append("Z ::= ");
@@ -173,6 +196,10 @@ public class LowLevelBuilder implements Builder<LowLevelMap> {
 			grammar.append(String.join((char) 32 + "|" + (char) 32, combs)
 					+ "\n");
 		}
+
+		
+
+		
 
 		count = 0;
 		int fixCountentSize;
@@ -190,6 +217,7 @@ public class LowLevelBuilder implements Builder<LowLevelMap> {
 				
 				for (int i = 1; i <= nNodes; i++)
 					conns.add(i);
+
 				for (List<String> comb : combinations(conns, fixCountentSize,
 						false)) {
 					String cont = String.join(" : ", comb);
@@ -211,6 +239,9 @@ public class LowLevelBuilder implements Builder<LowLevelMap> {
 
 			count++;
 		}
+
+
+		
 		
 //		System.out.println(grammar.toString());
 		return grammar.toString();
@@ -344,15 +375,30 @@ public class LowLevelBuilder implements Builder<LowLevelMap> {
     }
 
 
-	private static List<String> roomConnections(int n) {
+	private List<String> roomConnections(int n,int maxConn) {
 		List<String> connections = new ArrayList<>();
 		
-		for (int bin = 1; (bin < Math.pow(2, n - 1)) ; bin++) {
-			if(checkPrune(bin,6)){
-				String conn = String.format("%" + (n - 1) + "s", Integer.toBinaryString(bin)).replace(' ', '0');
-				connections.add(conn);
-			}
+		for (int i = 0;i<Math.min(n-1,maxConn) ; i++) {
+			
+			connections.add(oneConnections(i, Math.min(n-1,maxConn),n));
+			
 		}
 		return connections;
+	}
+
+	private static String oneConnections(int pos_set,int n_elem,int idNode) {
+		String connection="";
+		for (int j = 0; j < n_elem; j++) {
+			if (j==pos_set){
+				connection=connection.concat(" "+"N"+idNode);
+			}else{
+				connection=connection.concat(" "+"NZ");
+			}
+
+			if (j!=n_elem-1)
+				connection=connection.concat(" %");
+		}
+		
+		return connection;
 	}
 }
