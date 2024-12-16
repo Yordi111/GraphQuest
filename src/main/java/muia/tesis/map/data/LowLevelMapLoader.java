@@ -189,33 +189,56 @@ public class LowLevelMapLoader extends LowLevelGrammarBaseListener {
 	}
 
 	@Override
-	public void enterBin(LowLevelGrammarParser.BinContext ctx) {
+	public void enterDestinations(LowLevelGrammarParser.DestinationsContext ctx) {
 		log.info("Entering bin {}", ctx.getText());
-		String[] conns = ctx.getText().split("");
-		int node = conns.length + 1;
-
-		Node n = this.graph.addNode("" + node);
-			n.setAttribute("ui.class", "room");
 		
+		String[] conns = ctx.getText().split("%");
+		String node = conns[0];
+		
+		if (this.graph.getNode(node)==null && !conns.equals("0")){
+			Node n = this.graph.addNode(node);
+			
+			n.setAttribute("ui.class", "room");
+		}
+		
+		String newEdge="";
 		
 
 		int consCount = 0;
-		for (int i = 0; i < conns.length; i++) {
-			if (conns[i].equals("1")) {
-				this.graph.addEdge((i + 1) + "-" + node, "" + (i + 1), ""+ node);
+		for (int i = 1; i < conns.length; i++) {
+			
+			newEdge=conns[i] + "-" + node;
+			
+			if (this.graph.getEdge(newEdge)==null &&  !conns[i].equals(node) && !conns[i].equals("0")){
+				if (this.graph.getNode(conns[i])==null){
+					Node n = this.graph.addNode(conns[i]);
+					
+					n=this.graph.getNode(conns[i]);
+					n.setAttribute("ui.class", "room");
+					n.setAttribute("cons", 0);
+				}
+				this.graph.addEdge(conns[i] + "-" + node,conns[i],node);
+				Node otherNode = this.graph.getNode(conns[i]);
 				
-				Node otherNode = this.graph.getNode("" + (i + 1));
 				otherNode.setAttribute("cons",
 					(int) otherNode.getAttribute("cons") + 1);
 				consCount++;
 			}
+			
+			
+			
+			
+			
 		}
-		this.graph.getNode("" + node).setAttribute("cons", consCount);
+		this.graph.getNode(node).setAttribute("cons", consCount);
 	}
+
+	
 
 	@Override
 	public void enterBlock(LowLevelGrammarParser.BlockContext ctx) {
 		log.info("Entering block {}", ctx.getText());
+		
 		this.isBlock = true;
 		this.blockPositions = new ArrayList<>();
 	}
@@ -224,6 +247,7 @@ public class LowLevelMapLoader extends LowLevelGrammarBaseListener {
 	public void enterDec(LowLevelGrammarParser.DecContext ctx) {
 		log.info("Entering dec {} with block {}", ctx.getText(), this.isBlock);
 		
+
 		if (!this.isBlock) {
 			Node node = this.graph.getNode(ctx.getText());
 			String mContent = this.mainContents.get(this.count);
