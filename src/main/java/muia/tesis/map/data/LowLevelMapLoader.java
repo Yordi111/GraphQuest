@@ -121,7 +121,7 @@ public class LowLevelMapLoader extends LowLevelGrammarBaseListener {
 
 	}
 
-	private String image(int rooms, List<String> content) {
+	private String image(int rooms, List<String> content,List<String> content_main) {
 		File temp = null;
 		try {
 			String baseName=this.config.get("name_base_file");
@@ -151,6 +151,13 @@ public class LowLevelMapLoader extends LowLevelGrammarBaseListener {
 
 			if (content != null) {
 				for (String c : content){
+					image = compose(image, c,this.config.get("name_content_dir"));
+				}
+					
+			}
+
+			if (content_main != null) {
+				for (String c : content_main){
 					image = compose(image, c,this.config.get("name_content_dir"));
 				}
 					
@@ -188,8 +195,8 @@ public class LowLevelMapLoader extends LowLevelGrammarBaseListener {
 		int node = conns.length + 1;
 
 		Node n = this.graph.addNode("" + node);
-		n.setAttribute("ui.class", "room");
-
+			n.setAttribute("ui.class", "room");
+		
 		
 
 		int consCount = 0;
@@ -199,7 +206,7 @@ public class LowLevelMapLoader extends LowLevelGrammarBaseListener {
 				
 				Node otherNode = this.graph.getNode("" + (i + 1));
 				otherNode.setAttribute("cons",
-						(int) otherNode.getAttribute("cons") + 1);
+					(int) otherNode.getAttribute("cons") + 1);
 				consCount++;
 			}
 		}
@@ -216,7 +223,7 @@ public class LowLevelMapLoader extends LowLevelGrammarBaseListener {
 	@Override
 	public void enterDec(LowLevelGrammarParser.DecContext ctx) {
 		log.info("Entering dec {} with block {}", ctx.getText(), this.isBlock);
-
+		
 		if (!this.isBlock) {
 			Node node = this.graph.getNode(ctx.getText());
 			String mContent = this.mainContents.get(this.count);
@@ -235,7 +242,7 @@ public class LowLevelMapLoader extends LowLevelGrammarBaseListener {
 				if (node.getAttribute("content") != null)
 					content.addAll(node.getAttribute("content"));
 				content.add(mContent);
-				node.setAttribute("content", content);
+				node.setAttribute("content_main", content);
 			}
 		} else {
 			this.blockPositions.add(Integer.parseInt(ctx.getText()));
@@ -248,7 +255,7 @@ public class LowLevelMapLoader extends LowLevelGrammarBaseListener {
 		if (ctx.ID() != null) {
 			log.info("Entering content id {} with block {}", ctx.getText(),
 					this.isBlock);
-
+			
 			Node node = this.graph.getNode("" + this.blockPositions.remove(0));
 			List<String> content = new ArrayList<>();
 			if (node.getAttribute("content") != null)
@@ -263,8 +270,9 @@ public class LowLevelMapLoader extends LowLevelGrammarBaseListener {
 		for (Node node : this.graph) {
 			if (node.getAttribute("ui.class").equals("room")) {
 				List<String> content = node.getAttribute("content");
+				List<String> content_main = node.getAttribute("content_main");
 				int rooms = node.getAttribute("cons");
-				String img = image(rooms, content);
+				String img = image(rooms, content,content_main);
 
 				log.info("Building node {} with {} connections, {} contents",
 						node.getId(), rooms, content);

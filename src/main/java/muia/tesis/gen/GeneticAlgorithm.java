@@ -103,7 +103,7 @@ public class GeneticAlgorithm {
 
 			if (!best.equals(population.get(0))) {
 				conv = 0;
-				System.out.println("i am studi");
+				
 				best = population.get(0);
 			} else {
 				

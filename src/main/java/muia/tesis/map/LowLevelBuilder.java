@@ -12,6 +12,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -163,7 +164,7 @@ public class LowLevelBuilder implements Builder<LowLevelMap> {
 
 			List<String> combs = new ArrayList<>();
 			List<Integer> conns = new ArrayList<>();
-			for (int i = 1; i <= nNodes; i++)
+			for (int i = 1; i <= this.nNodes; i++)
 				conns.add(i);
 			for (List<String> comb : combinations(conns,
 					this.mainContents.size(), true)) {
@@ -244,12 +245,12 @@ public class LowLevelBuilder implements Builder<LowLevelMap> {
 	}
 
 	private static List<List<String>> combinations(List<Integer> n, int k,
-			boolean repeat) {
+			boolean repeat) {	
 		if (repeat) {
-			return repeating_combinations(n, k);
+			return repeating_combinations(n, k,new HashMap<String,List<List<String>>>());
 		} else {
 			List<List<String>> comb = new ArrayList<>();
-			for (Set<String> s : unique_combinations(n, k)) {
+			for (Set<String> s : unique_combinations(n, k,new HashMap<String,Set<Set<String>>>(),n.size())) {
 				comb.add(new ArrayList<>(s));
 			}
 			return comb;
@@ -257,16 +258,23 @@ public class LowLevelBuilder implements Builder<LowLevelMap> {
 	}
 
 	private static List<List<String>> repeating_combinations(List<Integer> n,
-			int k) {
+			int k,Map<String,List<List<String>>> cache) {
 		List<List<String>> comb = new ArrayList<>();
 		if (k == 1) {
 			for (int i : n)
 				comb.add(Arrays.asList("" + i));
 			return comb;
 		}
+		String key = String.valueOf(k-1);
 		for (int i : n) {
 			List<List<String>> combs;
-			combs = repeating_combinations(n, k - 1);
+			if (cache.containsKey(key)){
+				combs = cache.get(key);
+			}else{
+				combs = repeating_combinations(n, k - 1,cache);
+				cache.put(key,combs);
+			}
+			
 			for (List<String> c : combs) {
 				c = new ArrayList<>(c);
 				c.add("" + i);
@@ -276,7 +284,20 @@ public class LowLevelBuilder implements Builder<LowLevelMap> {
 		return comb;
 	}
 
-	private static Set<Set<String>> unique_combinations(List<Integer> n, int k) {
+	private static String key_ListConns(List<Integer> n,int nNodes){
+		String id="";
+		Boolean first=false;
+		
+		for (int i = 1; i <=nNodes; i++){
+			if(n.contains(i)){
+				id = id.concat("_"+i);
+			}
+		}
+		return id;
+					
+	}
+
+	private static Set<Set<String>> unique_combinations(List<Integer> n, int k,Map<String,Set<Set<String>>> cache,int nNodes) {
 		Set<Set<String>> comb = new HashSet<>();
 		if (k == 1) {
 			for (int i : n)
@@ -284,10 +305,19 @@ public class LowLevelBuilder implements Builder<LowLevelMap> {
 			return comb;
 		}
 		for (int i : n) {
+			
 			Set<Set<String>> combs;
 			List<Integer> subN = new ArrayList<>(n);
 			subN.remove(subN.indexOf(i));
-			combs = unique_combinations(subN, k - 1);
+			
+			String key = (k-1)+key_ListConns(subN, nNodes);
+
+			if (cache.containsKey(key)){
+				combs = cache.get(key);
+			}else{
+				combs = unique_combinations(subN, k - 1,cache,nNodes);
+				cache.put(key,combs);
+			}
 			for (Set<String> c : combs) {
 				c = new HashSet<>(c);
 				c.add("" + i);
@@ -316,7 +346,7 @@ public class LowLevelBuilder implements Builder<LowLevelMap> {
 
 	private static List<String> roomConnections(int n) {
 		List<String> connections = new ArrayList<>();
-		System.out.println("WHYYYYY");
+		
 		for (int bin = 1; (bin < Math.pow(2, n - 1)) ; bin++) {
 			if(checkPrune(bin,6)){
 				String conn = String.format("%" + (n - 1) + "s", Integer.toBinaryString(bin)).replace(' ', '0');
