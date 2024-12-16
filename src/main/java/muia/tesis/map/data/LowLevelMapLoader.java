@@ -98,21 +98,23 @@ public class LowLevelMapLoader extends LowLevelGrammarBaseListener {
         }
     }
 
+	
+	
 	private String name_regex(String content_regex,String name,List<String> content,Boolean combined){
 		String result= name;
 		String rightName;
 		for (String c : content){
-			
-			rightName= extraerDerechaInclusive(c,content_regex);
+			if( !this.mainContentsConfig.containsKey(c)){
+				rightName= extraerDerechaInclusive(c,content_regex);
 
-			if (!rightName.isEmpty() && !combined){
-				return rightName;
+				if (!rightName.isEmpty() && !combined){
+					return rightName;
+				}
+
+				if (!rightName.isEmpty() && combined){
+					return rightName+"/"+name;
+				}
 			}
-
-			if (!rightName.isEmpty() && combined){
-				return rightName+"/"+name;
-			}
-
 		}
 		return result;
 
