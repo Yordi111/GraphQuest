@@ -104,7 +104,8 @@ public class LowLevelBuilder implements Builder<LowLevelMap> {
 			if (nContent[count] > 0 ){//|| 
 			//(this.fixContent.containsKey(key) && this.fixContent.get(key).equals("Yes"))|| 
 			//(this.secureContent.containsKey(key) && this.secureContent.get(key).equals("Yes"))) 
-			grammar.append(key + "s " + key + " ");
+			grammar.append(key + "s " + key + " "+ key+"Comb ");
+			
 			}
 			count++;
 		}
@@ -133,6 +134,7 @@ public class LowLevelBuilder implements Builder<LowLevelMap> {
 			//(this.fixContent.containsKey(key) && this.fixContent.get(key).equals("Yes"))|| 
 			//(this.secureContent.containsKey(key) && this.secureContent.get(key).equals("Yes"))) 
 			grammar.append("; " + key + "s ");
+			
 			}
 			count++;
 		}
@@ -189,12 +191,14 @@ public class LowLevelBuilder implements Builder<LowLevelMap> {
 			List<Integer> conns = new ArrayList<>();
 			for (int i = 1; i <= this.nNodes; i++)
 				conns.add(i);
-			for (List<String> comb : combinations(conns,
-					this.mainContents.size(), true)) {
-				combs.add(String.join(" : ", comb));
+			String mainContents_combs="";
+			for (int i=0;i<this.mainContents.size()-1;i++){
+				mainContents_combs=mainContents_combs+"N : ";
 			}
-			grammar.append(String.join((char) 32 + "|" + (char) 32, combs)
-					+ "\n");
+			mainContents_combs=mainContents_combs+"N\n";
+
+			
+			grammar.append(mainContents_combs);
 		}
 
 		
@@ -208,28 +212,51 @@ public class LowLevelBuilder implements Builder<LowLevelMap> {
 
 
 			if (fixCountentSize > 0) {
+				String content_key_setup=key+"Comb ::=";
+				for (int i = 1; i <= fixCountentSize; i++) {
+					content_key_setup += " " + key;
+					if (i != fixCountentSize) content_key_setup += " :";
+				}
+				content_key_setup+=" \n";
+				grammar.append(content_key_setup);
 				grammar.append(key + "s ::= ");
 
 				List<String> combs = new ArrayList<>();
 				List<Integer> conns = new ArrayList<>();
-
+				List<List<String>> combsContent;
 
 				
 				for (int i = 1; i <= nNodes; i++)
 					conns.add(i);
-
-				for (List<String> comb : combinations(conns, fixCountentSize,
-						false)) {
-					String cont = String.join(" : ", comb);
-					cont += " ;";
-					for (int i = 1; i <= fixCountentSize; i++) {
-						cont += " " + key;
-						if (i != fixCountentSize) cont += " :";
+				System.out.println("what"+nNodes+"okey"+fixCountentSize);
+				if (nNodes <=10 || nNodes-3<fixCountentSize || fixCountentSize<=10){
+					combsContent=combinations(conns, fixCountentSize,
+					false);
+					for (List<String> comb : combsContent) {
+						String cont = String.join(" : ", comb);
+						cont += " ; ";
+						cont+=key+"Comb ";
+						combs.add(cont);
 					}
-					combs.add(cont);
+					grammar.append(String.join((char) 32 + "|" + (char) 32, combs));
+					grammar.append("\n");
+				}else {
+
+					String mainContents_combs="";
+					for (int i=0;i<fixCountentSize-1;i++){
+						mainContents_combs=mainContents_combs+"N : ";
+					}
+					mainContents_combs=mainContents_combs+"N ; "+key+"Comb \n";
+
+					
+					grammar.append(mainContents_combs);
+
+					
 				}
-				grammar.append(String.join((char) 32 + "|" + (char) 32, combs));
-				grammar.append("\n");
+				
+
+
+				
 
 				grammar.append(key + " ::= "); // P - Contents (term)
 				grammar.append(String.join((char) 32 + "|" + (char) 32,
@@ -278,15 +305,73 @@ public class LowLevelBuilder implements Builder<LowLevelMap> {
 	private static List<List<String>> combinations(List<Integer> n, int k,
 			boolean repeat) {	
 		if (repeat) {
+			System.out.println("nice");
 			return repeating_combinations(n, k,new HashMap<String,List<List<String>>>());
 		} else {
-			List<List<String>> comb = new ArrayList<>();
-			for (Set<String> s : unique_combinations(n, k,new HashMap<String,Set<Set<String>>>(),n.size())) {
-				comb.add(new ArrayList<>(s));
-			}
+			System.out.println("fuck");
+			List<List<String>> comb = combinar(n,k);
+			
 			return comb;
 		}
 	}
+
+	public static List<List<String>> combinar(List<Integer> numeros, int k) {
+        List<List<String>> resultado = new ArrayList<>();
+        
+        // Optimización cuando k == n
+        if (k == numeros.size()) {
+            List<String> combinacion = new ArrayList<>();
+            for (Integer num : numeros) {
+                combinacion.add(String.valueOf(num));
+            }
+            resultado.add(combinacion);
+            return resultado;
+        }
+        
+        // Optimización cuando k > n / 2
+        if (k > numeros.size() / 2) {
+            return complementarCombinaciones(numeros, numeros.size() - k);
+        }
+        
+        generarCombinaciones(numeros, k, 0, new ArrayList<>(), resultado);
+        return resultado;
+    }
+
+    private static List<List<String>> complementarCombinaciones(List<Integer> numeros, int kComplementario) {
+        List<List<String>> complementos = new ArrayList<>();
+        generarCombinaciones(numeros, kComplementario, 0, new ArrayList<>(), complementos);
+        
+        List<List<String>> resultado = new ArrayList<>();
+        for (List<String> complemento : complementos) {
+            List<Integer> combinacionNumeros = new ArrayList<>(numeros);
+            for (String strNum : complemento) {
+                combinacionNumeros.remove(Integer.valueOf(strNum));
+            }
+            List<String> combinacion = new ArrayList<>();
+            for (Integer num : combinacionNumeros) {
+                combinacion.add(String.valueOf(num));
+            }
+            resultado.add(combinacion);
+        }
+        return resultado;
+    }
+
+    private  static void generarCombinaciones(List<Integer> numeros, int k, int indiceInicio, List<Integer> combinacionActual, List<List<String>> resultado) {
+        if (combinacionActual.size() == k) {
+            List<String> combinacionString = new ArrayList<>();
+            for (Integer num : combinacionActual) {
+                combinacionString.add(String.valueOf(num));
+            }
+            resultado.add(combinacionString);
+            return;
+        }
+        
+        for (int i = indiceInicio; i < numeros.size(); i++) {
+            combinacionActual.add(numeros.get(i));
+            generarCombinaciones(numeros, k, i + 1, combinacionActual, resultado);
+            combinacionActual.remove(combinacionActual.size() - 1);
+        }
+    }
 
 	private static List<List<String>> repeating_combinations(List<Integer> n,
 			int k,Map<String,List<List<String>>> cache) {
